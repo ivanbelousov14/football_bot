@@ -1,5 +1,4 @@
-import emoji
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -21,8 +20,8 @@ def kb_back_menu():
 
 def kb_info():
     kb_builder = InlineKeyboardBuilder()
-    button_1 = InlineKeyboardButton(text='Matches today', callback_data='matches today')
-    button_2 = InlineKeyboardButton(text='Matches online', callback_data='matches online')
+    button_1 = InlineKeyboardButton(text='Matches today', callback_data='today')
+    button_2 = InlineKeyboardButton(text='Matches online', callback_data='online')
     button_3 = InlineKeyboardButton(text='Tournament tables', callback_data='tournament tables')
     # button_4 = InlineKeyboardButton(text='BACK', callback_data='back')
     kb_builder.row(button_1, button_2, button_3, width=3)
@@ -43,4 +42,9 @@ def kb_tournament_tables():
     return kb_builder.as_markup()
 
 
+def kb_profile():
+    button_1 = KeyboardButton(text='profile')
+    button_2 = KeyboardButton(text='edit profile')
+    kb = ReplyKeyboardMarkup(keyboard=[[button_1, button_2]], resize_keyboard=True)
+    return kb
 

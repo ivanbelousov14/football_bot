@@ -1,15 +1,20 @@
-import asyncio
 from aiogram import Router, F
-from aiogram import types
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-from keyboards.keyboard import create_kb1, kb_info, kb_tournament_tables, kb_back_menu
-from data import about, epl_tournament_table, laliga_tournament_table, bundesliga_tournament_table, \
+
+from data_from_sofascore.online import online_list
+from data_from_sofascore.today import today_list
+from keyboards.keyboard import create_kb1, kb_info, kb_tournament_tables, kb_back_menu, kb_profile
+from data_from_sofascore.tournament_tables import about, epl_tournament_table, laliga_tournament_table, bundesliga_tournament_table, \
     seriea_tournament_table, ligaone_tournament_table, rpl_tournament_table
+from db.requests import set_user, add_data, get_info
+
 
 storage = MemoryStorage()
+
+
 
 user_dict: dict[int, dict[str, str | int | bool]] = {}
 
@@ -25,8 +30,7 @@ class FSMmy(StatesGroup):
 
 @user_router.message(CommandStart())
 async def command_start(message: Message):
-    await message.answer("start", reply_markup=create_kb1())
-
+    await message.answer("SELECT ITEM", reply_markup=create_kb1())
 
 
 @user_router.callback_query(F.data == 'info')
@@ -37,8 +41,47 @@ async def start_info(callback: CallbackQuery):
 
 @user_router.callback_query(F.data == 'interactive')
 async def interactive(callback: CallbackQuery):
-    await callback.message.answer_sticker(sticker='CAACAgIAAxkBAAEJD-BnBo4XwXrgvsA17IeVFyzEOkIAAc8AAmEJAAJAjVlL8oFCIj1C1os2BA', reply_markup=create_kb1())
-    await callback.answer('unavailable')
+    await set_user(callback.from_user.id)
+    await callback.message.answer(text="Добро пожаловать!", reply_markup=kb_profile())
+
+
+@user_router.message(F.text == 'profile')
+async def get_profile(message: Message):
+    profile = await get_info(message.from_user.id)
+    await message.answer(text=profile, reply_markup=ReplyKeyboardRemove())
+
+
+# @user_router.message(F.text == 'edit profile')
+# async def edit_profile(message: Message):
+#     await message.answer('Укажите ваше имя')
+#     new_name = ?
+#     await add_data(message.from_user.id, new_name)
+#     await message.reply(text="Данные сохранены")
+#     data = await get_info(message.from_user.id)
+#     await message.answer(text=data, reply_markup=ReplyKeyboardRemove())
+
+
+
+
+
+
+
+#     await callback.message.answer(text="введите имя")
+#
+#
+# @user_router.message()
+async def add_name(message: Message):
+    await add_data(message.from_user.id, message.text)
+    await message.answer("Данные внесены")
+    info = await get_info(message.from_user.id)
+    await message.answer(text=info)
+
+
+
+
+    #
+    # # await callback.message.answer_sticker(sticker='CAACAgIAAxkBAAEJD-BnBo4XwXrgvsA17IeVFyzEOkIAAc8AAmEJAAJAjVlL8oFCIj1C1os2BA', reply_markup=create_kb1())
+    # await callback.answer('unavailable')
 
 
 @user_router.callback_query(F.data == 'about me')
@@ -99,6 +142,20 @@ async def back_to(callback: CallbackQuery):
         await callback.answer()
         await callback.message.delete()
         await callback.answer(reply_markup=None)
+
+
+@user_router.callback_query(F.data == 'online')
+async def online_list_table(callback: CallbackQuery):
+    await callback.message.answer(text=online_list(), reply_markup=kb_back_menu(), parse_mode='HTML')
+    await callback.answer()
+
+
+@user_router.callback_query(F.data == 'today')
+async def today_list_table(callback: CallbackQuery):
+    await callback.message.answer(text=today_list(), reply_markup=kb_back_menu())
+    await callback.answer()
+
+
 
 
 
