@@ -1,7 +1,8 @@
 from aiogram import Router, F
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
-from aiogram.filters import CommandStart, Command
-from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import CommandStart, StateFilter
+from aiogram.fsm.state import State, StatesGroup, default_state
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from data_from_sofascore.online import online_list
@@ -9,8 +10,7 @@ from data_from_sofascore.today import today_list
 from keyboards.keyboard import create_kb1, kb_info, kb_tournament_tables, kb_back_menu, kb_profile
 from data_from_sofascore.tournament_tables import about, epl_tournament_table, laliga_tournament_table, bundesliga_tournament_table, \
     seriea_tournament_table, ligaone_tournament_table, rpl_tournament_table
-from db.requests import set_user, add_data, get_info
-
+from db.requests import set_user, add_data, get_info, add_email
 
 storage = MemoryStorage()
 
@@ -21,11 +21,9 @@ user_dict: dict[int, dict[str, str | int | bool]] = {}
 user_router = Router()
 
 
-class FSMmy(StatesGroup):
-    enter_action = State()
-    enter_info_action = State()
-    enter_league = State()
-    enter_matches = State()
+class FSMEditProfile(StatesGroup):
+    waiting_for_name = State()
+    waiting_for_email = State()
 
 
 @user_router.message(CommandStart())
@@ -51,9 +49,30 @@ async def get_profile(message: Message):
     await message.answer(text=profile, reply_markup=ReplyKeyboardRemove())
 
 
-# @user_router.message(F.text == 'edit profile')
-# async def edit_profile(message: Message):
-#     await message.answer('Укажите ваше имя')
+@user_router.message(F.text == 'edit profile', StateFilter(default_state))
+async def edit_profile(message: Message, state: FSMContext):
+    await message.answer('Укажите ваше имя')
+    await state.set_state(FSMEditProfile.waiting_for_name)
+
+
+@user_router.message(StateFilter(FSMEditProfile.waiting_for_name))
+async def process_name(message: Message, state: FSMContext):
+    new_name = message.text
+    await add_data(message.from_user.id, new_name)
+    await message.reply("Новое имя сохранено\nВведите email:")
+    await state.set_state(FSMEditProfile.waiting_for_email)
+
+
+@user_router.message(StateFilter(FSMEditProfile.waiting_for_email))
+async def process_mail(message: Message, state: FSMContext):
+    email = message.text
+    await add_email(message.from_user.id, email)
+    await message.reply("email saved")
+    await state.clear()
+
+
+#
+#
 #     new_name = ?
 #     await add_data(message.from_user.id, new_name)
 #     await message.reply(text="Данные сохранены")

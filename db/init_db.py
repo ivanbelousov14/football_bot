@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from config_data.config import load_config
-from db.user import User
+from db.models import User
 
 config = load_config('.env')
 url = URL.create(drivername='postgresql+asyncpg',
